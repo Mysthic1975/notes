@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notizen verwalten</title>
+</head>
+<body>
+<h1>Notizen verwalten</h1>
+
+<!-- Formular zum Erstellen einer Notiz -->
+<h2>Notiz erstellen</h2>
+<form id="createNoteForm">
+    <label for="createTitle">Titel:</label><br>
+    <input type="text" id="createTitle" name="createTitle"><br>
+    <label for="createContent">Inhalt:</label><br>
+    <textarea id="createContent" name="createContent"></textarea><br>
+    <button type="submit">Erstellen</button>
+</form>
+
+<!-- Liste aller vorhandenen Notizen -->
+<h2>Alle Notizen anzeigen</h2>
+<ul id="noteList">
+    <!-- Hier werden die Notizen dynamisch aus der Datenbank geladen -->
+</ul>
+
+<!-- Script für das Laden und Anzeigen der Notizen sowie für das Bearbeiten und Löschen -->
+<script>
+    // Funktion zum Laden aller Notizen und Anzeigen in der Liste
+    function loadNotes() {
+        fetch('/api/notes')
+            .then(response => response.json())
+            .then(notes => {
+                const noteList = document.getElementById('noteList');
+                noteList.innerHTML = ''; // Leere die Liste
+                notes.forEach(note => {
+                    const listItem = document.createElement('li');
+                    const editLink = document.createElement('a');
+                    const deleteButton = document.createElement('button');
+
+                    editLink.textContent = note.title; // Titel der Notiz als Text des Links
+                    editLink.href = `/api/notes/edit/${note.id}`;
+                    editLink.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        editNoteForm(note.id);
+                    });
+
+                    deleteButton.textContent = 'Löschen';
+                    deleteButton.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        deleteNoteForm(note.id);
+                    });
+
+                    listItem.appendChild(editLink);
+                    listItem.appendChild(deleteButton);
+                    noteList.appendChild(listItem);
+                });
+            })
+            .catch(error => console.error('Error loading notes:', error));
+    }
+
+    // Funktion zum Anzeigen des Bearbeitungsformulars für eine Notiz
+    function editNoteForm(noteId) {
+        window.location.href = `/api/notes/edit/${noteId}`;
+    }
+
+    // Funktion zum Anzeigen des Löschformulars für eine Notiz
+    function deleteNoteForm(noteId) {
+        if (confirm('Möchten Sie diese Notiz wirklich löschen?')) {
+            fetch(`/api/notes/delete/${noteId}`, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete note');
+                    }
+                    loadNotes(); // Aktualisiere die Liste der Notizen
+                })
+                .catch(error => console.error('Error deleting note:', error));
+        }
+    }
+
+    // Event-Listener für das Erstellen einer Notiz
+    document.getElementById('createNoteForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = {
+            title: document.getElementById('createTitle').value,
+            content: document.getElementById('createContent').value
+        };
+        fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to create note');
+                }
+                document.getElementById('createTitle').value = '';
+                document.getElementById('createContent').value = '';
+                loadNotes(); // Aktualisiere die Liste der Notizen
+            })
+            .catch(error => console.error('Error creating note:', error));
+    });
+
+    // Laden aller Notizen beim Laden der Seite
+    window.addEventListener('load', loadNotes);
+</script>
+</body>
+</html>
+
+
+
+
+

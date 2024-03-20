@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notiz bearbeiten</title>
+</head>
+<body>
+<h1>Notiz bearbeiten</h1>
+
+<form id="editNoteForm">
+    <label for="editTitle">Titel:</label><br>
+    <input type="text" id="editTitle" name="editTitle" value=""><br>
+    <label for="editContent">Inhalt:</label><br>
+    <textarea id="editContent" name="editContent"></textarea><br>
+    <button type="submit">Aktualisieren</button>
+</form>
+
+<!-- Script zum Laden und Anzeigen der Notizdaten -->
+<script>
+    // Funktion zum Laden und Anzeigen der Notizdaten
+    function loadNoteData() {
+        const noteId = window.location.pathname.split('/').pop(); // ID aus der URL extrahieren
+        fetch(`/api/notes/${noteId}`)
+            .then(response => response.json())
+            .then(note => {
+                document.getElementById('editTitle').value = note.title;
+                document.getElementById('editContent').value = note.content;
+            })
+            .catch(error => console.error('Error loading note data:', error));
+    }
+
+    // Event-Listener für das Absenden des Bearbeitungsformulars
+    document.getElementById('editNoteForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const noteId = window.location.pathname.split('/').pop(); // ID aus der URL extrahieren
+        const formData = {
+            title: document.getElementById('editTitle').value,
+            content: document.getElementById('editContent').value
+        };
+        fetch(`/api/notes/edit/${noteId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update note');
+                }
+                window.location.href = '/api/notes/view'; // Weiterleitung zur Liste der Notizen
+            })
+            .catch(error => console.error('Error updating note:', error));
+    });
+
+    // Laden der Notizdaten beim Laden der Seite
+    window.addEventListener('load', loadNoteData);
+</script>
+
+</body>
+</html>
+
+
